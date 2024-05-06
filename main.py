@@ -97,10 +97,8 @@ if __name__ == '__main__':
         help='Find pattern in string.')
 
     parser_create = actionSubParsers.add_parser('create')
-    charsetSubParsers = parser_create.add_argument("--charset", "-c" ,help="Charset Options")
-    charsetSubParsers.required = False
-    parser_dump = actionSubParsers.add_parser("charset",
-                                              description="set of characters to use for pattern generation, separated by coma. ie: a,b,c...",)
+    parser_create.add_argument("--charset", "-c" ,help="Charset Options, allows to specify a charset for pattern, each chars must be separated by comma. ie: a,b,c...")
+    parser_create.add_argument("--quiet", "-q" ,help="Quiet option, will print only pattern with no colors")
 
 
 
