@@ -80,8 +80,6 @@ if __name__ == '__main__':
         description='Allow easy generation of patterns in SHELL',
         epilog="Two args, a length, and an action between 'find' and 'create', returns an offset")
     parser.add_argument('length', type=int)
-    parser.add_argument('--quiet', '-q', dest="quiet", help="Quiet Options, print only pattern",
-                        type=bool)  # option that takes a value
 
     actionSubParsers = parser.add_subparsers(dest='subcommand')
     actionSubParsers.required = True
@@ -93,7 +91,6 @@ if __name__ == '__main__':
     parser_create = actionSubParsers.add_parser('create')
     parser_create.add_argument("--charset", "-c",
                                help="Charset Options, allows to specify a charset for pattern, each chars must be separated by comma. ie: a,b,c...")
-    parser_create.add_argument("--quiet", "-q", help="Quiet option, will print only pattern with no colors")
 
     args = parser.parse_args()
     main(args)
