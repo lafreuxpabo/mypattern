@@ -3,6 +3,8 @@
 
 """
 import argparse
+import sys
+
 from colorama import Style, Fore, Back
 import re
 
@@ -12,20 +14,20 @@ def main(argParser):
     patternLength = argParser.length
 
     if (choice == "create"):
-        if (argParser.charset):
-            patternCreated = patternCreate(patternLength, argParser.charset)
-        else:
-            patternCreated = patternCreate(patternLength)
+        patternCreated = patternCreate(patternLength, argParser.offset, argParser.charset)
         print(patternCreated)
-    else:
-        origPattern = patternCreate(patternLength)
+    elif (choice == "find"):
+        origPattern = patternCreate(patternLength, argParser.offset, charset=None)
         patternToFind = argParser.pattern
         patternToFind, patternOffset = patternFind(origPattern, patternToFind)
         if (patternToFind == -1):
             print(Fore.RED + Back.BLACK + "[!] Pattern Not Found [!]" + Style.RESET_ALL, end='')
         else:
-            print(Fore.GREEN + Back.BLACK + "[*]" + Style.RESET_ALL + "Offset: " + str(patternOffset))
             if (not argParser.quiet):
+                print(Fore.GREEN + Back.BLACK + "[*]" + Style.RESET_ALL + "Offset: " + str(patternOffset))
+                if (argParser.offset):
+                    print(Fore.GREEN + Back.BLACK + "[*]" + Style.RESET_ALL + "artificial Offset: " + str(
+                        argParser.offset))
                 if (patternOffset > 5):
                     print(Fore.RED + Back.BLACK + origPattern[0:patternOffset] + Style.RESET_ALL, end='')
                     print(Fore.GREEN + Back.BLACK + patternToFind + Style.RESET_ALL, end='')
@@ -35,7 +37,9 @@ def main(argParser):
                 elif (not patternOffset):  # patternOffset is 0
                     print(Fore.GREEN + Back.BLACK + patternToFind + Style.RESET_ALL, end='')
             else:
-                print(origPattern[0:patternOffset])
+                print(patternOffset)
+    else:
+        sys.exit("Action not recognized, exiting")
 
 
 def fromBytesWith0x(patternToFind):
@@ -47,10 +51,10 @@ def fromBytesWith0x(patternToFind):
     return finalPatternRemade
 
 
-def patternCreate(length: int, charset=None):
+def patternCreate(length: int, offset=0, charset=None):
     fd = open("./cyclicPatternGeneration", 'r')
     if (not charset):
-        line = fd.readlines()[0][0:length]
+        line = fd.readlines()[0][0 + offset:length + offset]
     else:
         line = ''
         charset = charset.split(',')
@@ -63,7 +67,6 @@ def patternCreate(length: int, charset=None):
 
 
 def patternFind(patternBase, patternToFind):
-    #regexPatternBytesBackslashX = "[\\]..+"
     regexPatternStart0x = "0x[0-9]+"
     finalPatternRemade = patternToFind
     if (re.search(regexPatternStart0x, finalPatternRemade)):
@@ -78,7 +81,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(
         prog='Pattern Project',
         description='Allow easy generation of patterns in SHELL',
-        epilog="Two args, a length, and an action between 'find' and 'create', returns an offset")
+        epilog="Two args, a length, and an action between 'find' and 'create', returns a pattern or an offset")
     parser.add_argument('length', type=int)
 
     actionSubParsers = parser.add_subparsers(dest='subcommand')
@@ -87,10 +90,25 @@ if __name__ == '__main__':
     parser_find.add_argument(
         'pattern',
         help='Find pattern in string.')
+    parser_find.add_argument("--offset", "-o",
+                             help="Offset option, allows to specify an offset when creating your pattern, "
+                                  "instead of starting from pattern[0], it will starts from pattern[offset]",
+                             type=int,
+                             required=False, default=0)
+    parser_find.add_argument("--quiet", "-q",
+                             help="Turn off verbose output, return only offset",
+                             required=False, default=False, action='store_true')
 
     parser_create = actionSubParsers.add_parser('create')
     parser_create.add_argument("--charset", "-c",
-                               help="Charset Options, allows to specify a charset for pattern, each chars must be separated by comma. ie: a,b,c...")
+                               help="Charset Options, allows to specify a charset for pattern, each chars must be "
+                                    "separated by comma. ie: a,b,c...", required=False)
+
+    parser_create.add_argument("--offset", "-o",
+                               help="Offset option, allows to specify an offset when creating your pattern, "
+                                    "instead of starting from pattern[0], it will starts from pattern[offset]",
+                               type=int,
+                               required=False, default=0)
 
     args = parser.parse_args()
     main(args)
