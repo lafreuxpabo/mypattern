@@ -7,8 +7,6 @@ from colorama import Style, Fore, Back
 import re
 
 
-
-
 def main(argParser):
     choice = argParser.subcommand
     patternLength = argParser.length
@@ -31,7 +29,9 @@ def main(argParser):
                 if (patternOffset > 5):
                     print(Fore.RED + Back.BLACK + origPattern[0:patternOffset] + Style.RESET_ALL, end='')
                     print(Fore.GREEN + Back.BLACK + patternToFind + Style.RESET_ALL, end='')
-                    print(Fore.RED + Back.BLACK + origPattern[patternOffset + (len(patternToFind)):patternLength] + Style.RESET_ALL, end='')
+                    print(Fore.RED + Back.BLACK + origPattern[
+                                                  patternOffset + (len(patternToFind)):patternLength] + Style.RESET_ALL,
+                          end='')
                 elif (not patternOffset):  # patternOffset is 0
                     print(Fore.GREEN + Back.BLACK + patternToFind + Style.RESET_ALL, end='')
             else:
@@ -41,21 +41,21 @@ def main(argParser):
 def fromBytesWith0x(patternToFind):
     finalPatternRemade = ''
     for idx in range(len(patternToFind) - 1, 0, -2):
-        tmp = '' + patternToFind[idx-1] + patternToFind[idx]
+        tmp = '' + patternToFind[idx - 1] + patternToFind[idx]
         if ('0x' not in tmp):
             finalPatternRemade += chr(int(tmp, 16))
     return finalPatternRemade
 
 
 def patternCreate(length: int, charset=None):
-    fd = open("/home/saturne/Bureau/Projets/mypattern/cyclicPatternGeneration", 'r')
+    fd = open("./cyclicPatternGeneration", 'r')
     if (not charset):
         line = fd.readlines()[0][0:length]
     else:
         line = ''
         charset = charset.split(',')
         cInd = 0
-        while(len(line) != length):
+        while (len(line) != length):
             line += charset[cInd]
             cInd += 1
             cInd = cInd % len(charset)
@@ -68,17 +68,10 @@ def patternFind(patternBase, patternToFind):
     finalPatternRemade = patternToFind
     if (re.search(regexPatternStart0x, finalPatternRemade)):
         finalPatternRemade = fromBytesWith0x(patternToFind)
-    #if (re.search(regexPatternBytesBackslashX, patternToFind)):
-    #    patternToFind.replace("\\x", "")
-    #    finalPatternRemade = fromBytesWith0x(patternToFind)
-    #    print(finalPatternRemade)
     if (finalPatternRemade in patternBase):
         return (finalPatternRemade, patternBase.index(finalPatternRemade))
     else:
         return (-1, -1)
-
-
-
 
 
 if __name__ == '__main__':
@@ -87,7 +80,8 @@ if __name__ == '__main__':
         description='Allow easy generation of patterns in SHELL',
         epilog="Two args, a length, and an action between 'find' and 'create', returns an offset")
     parser.add_argument('length', type=int)
-    parser.add_argument('--quiet', '-q', dest="quiet", help="Quiet Options, print only pattern", type=bool)  # option that takes a value
+    parser.add_argument('--quiet', '-q', dest="quiet", help="Quiet Options, print only pattern",
+                        type=bool)  # option that takes a value
 
     actionSubParsers = parser.add_subparsers(dest='subcommand')
     actionSubParsers.required = True
@@ -97,11 +91,9 @@ if __name__ == '__main__':
         help='Find pattern in string.')
 
     parser_create = actionSubParsers.add_parser('create')
-    parser_create.add_argument("--charset", "-c" ,help="Charset Options, allows to specify a charset for pattern, each chars must be separated by comma. ie: a,b,c...")
-    parser_create.add_argument("--quiet", "-q" ,help="Quiet option, will print only pattern with no colors")
-
-
+    parser_create.add_argument("--charset", "-c",
+                               help="Charset Options, allows to specify a charset for pattern, each chars must be separated by comma. ie: a,b,c...")
+    parser_create.add_argument("--quiet", "-q", help="Quiet option, will print only pattern with no colors")
 
     args = parser.parse_args()
     main(args)
-
