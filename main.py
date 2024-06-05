@@ -3,21 +3,41 @@
 
 """
 import argparse
+import os.path
 import sys
+import urllib.error
 
+from pwn import *
 from colorama import Style, Fore, Back
 import re
+from urllib import request
+from urllib.request import urlretrieve
+
 
 
 def main(argParser):
     choice = argParser.subcommand
     patternLength = argParser.length
+    envVar = os.environ["HOME"]
+    configFolder = envVar + "/.config/pypattern/"
+    configPath = configFolder + "/patternSettings"
+    if (not os.path.exists(configFolder)):
+        os.makedirs(configFolder)
+    if (not os.path.exists(configPath)):
+        print(Fore.BLACK + Back.BLUE + "[*] Creating Config [*]" + Style.RESET_ALL)
+        fdSetting = open(configPath, "w+")
+        fdSetting.write("patternPath:" + configFolder + "/cyclicPatternGeneration")
+        fdSetting.close()
+        writePattern(configFolder)
+        print(Fore.BLACK + Back.GREEN + "[*] Config and pattern created in $HOME/.config/pypattern/ folder [*]" + Style.RESET_ALL)
 
+
+    patternPath = open(configPath, "r").readlines()[0].split(':')[1]
     if (choice == "create"):
-        patternCreated = patternCreate(patternLength, argParser.offset, argParser.charset)
+        patternCreated = patternCreate(patternLength, argParser.end, patternPath,argParser.offset, argParser.charset)
         print(patternCreated)
     elif (choice == "find"):
-        origPattern = patternCreate(patternLength, argParser.offset, charset=None)
+        origPattern = patternCreate(patternLength, argParser.end, patternPath,argParser.offset, charset=None)
         patternToFind = argParser.pattern
         patternToFind, patternOffset = patternFind(origPattern, patternToFind)
         if (patternToFind == -1):
@@ -38,8 +58,26 @@ def main(argParser):
                     print(Fore.GREEN + Back.BLACK + patternToFind + Style.RESET_ALL, end='')
             else:
                 print(patternOffset)
+    elif (choice == "config"):
+        newPath = input("New Path To Pattern File: ")
+
     else:
         sys.exit("Action not recognized, exiting")
+
+
+def writePattern(pathToPattern):
+    print(Fore.BLACK + Back.BLUE + "[*] Downloading Pattern [*]" + Style.RESET_ALL)
+
+    try:
+        request.urlopen('https://google.com', timeout=1)
+    except urllib.error.URLError as err:
+        print(err)
+        print(Back.RED + Fore.BLACK + "[!!] Need internet connection to retrieve pattern [!!]" + Style.RESET_ALL)
+        print(Back.RED + Fore.BLACK + "[!] You can also specify a patternFile with a path by running 'pypattern config' [!]" + Style.RESET_ALL)
+        sys.exit(-1)
+    res = urlretrieve("https://raw.githubusercontent.com/lafreuxpabo/mypattern/main/cyclicPatternGeneration", pathToPattern + "cyclicPatternGeneration")
+    if (res[0] == 200):
+        print(Back.RED + Fore.BLACK + "[*] Downloaded patternFile [*]" + Style.RESET_ALL)
 
 
 def fromBytesWith0x(patternToFind):
@@ -51,8 +89,8 @@ def fromBytesWith0x(patternToFind):
     return finalPatternRemade
 
 
-def patternCreate(length: int, offset=0, charset=None):
-    fd = open("./cyclicPatternGeneration", 'r')
+def patternCreate(length: int, end, pathToPattern, offset=0, charset=None):
+    fd = open(pathToPattern, 'r')
     if (not charset):
         line = fd.readlines()[0][0 + offset:length + offset]
     else:
@@ -109,6 +147,13 @@ if __name__ == '__main__':
                                     "instead of starting from pattern[0], it will starts from pattern[offset]",
                                type=int,
                                required=False, default=0)
+    parser_create.add_argument("--end", "-e",
+                              help="Value to add at the end of the generated pattern",
+                              type=int,
+                              required=False, default=0)
+
+    parser_config = actionSubParsers.add_parser('config')
 
     args = parser.parse_args()
     main(args)
+
